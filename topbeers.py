@@ -15,10 +15,11 @@ html = myopener.open(url)
 soup = BeautifulSoup(html, 'html.parser')
 
 rows = soup.findAll('tr')
-beer_rows = rows[2:]
+beer_rows = rows[2:13]
 
 top_beers = []
-brewer_states = {}
+brewer_state = {}
+brewer_avg = {}
 
 for row in beer_rows:
 
@@ -40,12 +41,27 @@ for row in beer_rows:
   else:
     abv_wr = ["", raw_abv_wr]
 
-  # print "| " + rank + " | " + beer_name + " | " + brewer_name + " | " + beer_style + " | " + abv_wr[0] + " | " + abv_wr[1] + " |"
+  if brewer_name in brewer_state:
+    state = brewer_state[brewer_name]
+    avg = brewer_avg[brewer_name]
 
-  top_beers.append([rank, beer_name, brewer_name, beer_style, abv_wr[0], abv_wr[1]])
+  else:
+    burl = "http://www.beeradvocate.com" + brewer_page
+    brewer_page = myopener.open(burl)
+    bsoup = BeautifulSoup(brewer_page, 'html.parser')
 
-print "| Rank | Beer | Brewer | Style | ABV | WR |"
-print "| --- | --- | --- | --- | --- | --- |"
+    state = bsoup.findAll(property="og:title")[0]["content"].split(" | ")[1].split(", ")[1]
+
+    avg = bsoup.findAll(class_="BAscore_big ba-score")[0].text
+
+    brewer_state[brewer_name] = state
+    brewer_avg[brewer_name] = avg
+
+
+  top_beers.append([rank, beer_name, brewer_name, state, beer_style, abv_wr[0], abv_wr[1], avg])
+
+print "| Rank | Beer | Brewer | State | Style | ABV | WR | Brewer AVG |"
+print "| --- | --- | --- | --- | --- | --- | --- | --- |"
 
 for beer in top_beers:
-  print "| " + beer[0] + " | " + beer[1] + " | " + beer[2] + " | " + beer[3] + " | " + beer[4] + " | " + beer[5] + " |"
+  print "| " + beer[0] + " | " + beer[1] + " | " + beer[2] + " | " + beer[3] + " | " + beer[4] + " | " + beer[5] + " | " + beer[7] + " | " + beer[6] + " |"
