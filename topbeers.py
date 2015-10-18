@@ -15,7 +15,7 @@ html = myopener.open(url)
 soup = BeautifulSoup(html, 'html.parser')
 
 rows = soup.findAll('tr')
-beer_rows = rows[2:13]
+beer_rows = rows[2:]
 
 top_beers = []
 brewer_state = {}
