@@ -5,7 +5,7 @@ from urllib import urlopen
 from urllib import FancyURLopener
 
 class MyOpener(FancyURLopener):
-  version = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; it; rv:1.8.1.11) Gecko/20071127 Firefox/2.0.0.11'
+  version = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36'
 
 myopener = MyOpener()
 
