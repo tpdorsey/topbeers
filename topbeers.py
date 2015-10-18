@@ -18,6 +18,8 @@ rows = soup.findAll('tr')
 beer_rows = rows[2:]
 
 top_beers = []
+
+# To Do: persist this data to a file to reduce web page calls on subsequent runs
 brewer_state = {}
 brewer_avg = {}
 
