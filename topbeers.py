@@ -1,5 +1,3 @@
-
-
 from bs4 import BeautifulSoup
 from urllib import urlopen
 from urllib import FancyURLopener
