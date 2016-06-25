@@ -7,7 +7,9 @@ class MyOpener(FancyURLopener):
 
 myopener = MyOpener()
 
-url = 'http://www.beeradvocate.com/lists/top/'
+base_url = ''
+
+url = base_url + '/lists/top/'
 
 html = myopener.open(url)
 soup = BeautifulSoup(html, 'html.parser')
@@ -46,7 +48,7 @@ for row in beer_rows:
     avg = brewer_avg[brewer_name]
 
   else:
-    burl = "http://www.beeradvocate.com" + brewer_page
+    burl = base_url + brewer_page
     brewer_page = myopener.open(burl)
     bsoup = BeautifulSoup(brewer_page, 'html.parser')
 
