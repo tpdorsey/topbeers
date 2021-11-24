@@ -1,18 +1,18 @@
 from bs4 import BeautifulSoup
-from urllib import urlopen
-from urllib import FancyURLopener
+import requests
 
-class MyOpener(FancyURLopener):
-  version = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36'
+headers = {
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.108 Safari/537.36'
+}
 
-myopener = MyOpener()
-
-base_url = ''
+base_url = 'http://beeradvocate.com'
 
 url = base_url + '/lists/top/'
 
-html = myopener.open(url)
-soup = BeautifulSoup(html, 'html.parser')
+session = requests.Session()
+response = session.get(url, headers=headers)
+
+soup = BeautifulSoup(response.text, "html.parser")
 
 rows = soup.findAll('tr')
 beer_rows = rows[2:]
@@ -49,12 +49,17 @@ for row in beer_rows:
 
   else:
     burl = base_url + brewer_page
-    brewer_page = myopener.open(burl)
-    bsoup = BeautifulSoup(brewer_page, 'html.parser')
+    brewer_page = session.get(burl, headers=headers)
+    bsoup = BeautifulSoup(brewer_page.text, 'html.parser')
 
     state = bsoup.findAll(property="og:title")[0]["content"].split(" | ")[1].split(", ")[1]
 
-    avg = bsoup.findAll(class_="BAscore_big ba-score")[0].text
+    # avg = bsoup.findAll(class_="ba-score")[0].text
+    avg_score = bsoup.findAll(class_="ba-score")
+    if len(avg_score) > 0:
+      avg = avg_score[0].text
+    else:
+      avg = ""
 
     brewer_state[brewer_name] = state
     brewer_avg[brewer_name] = avg
@@ -62,8 +67,7 @@ for row in beer_rows:
 
   top_beers.append([rank, beer_name, brewer_name, state, beer_style, abv_wr[0], abv_wr[1], avg])
 
-print "| Rank | Beer | Brewer | State | Style | ABV | WR | Brewer AVG |"
-print "| --- | --- | --- | --- | --- | --- | --- | --- |"
-
+print( "| Rank | Beer | Brewer | State | Style | ABV | WR | Brewer AVG |")
+print( "| --- | --- | --- | --- | --- | --- | --- | --- |")
 for beer in top_beers:
-  print "| " + beer[0] + " | " + beer[1] + " | " + beer[2] + " | " + beer[3] + " | " + beer[4] + " | " + beer[5] + " | " + beer[7] + " | " + beer[6] + " |"
+  print( "| " + beer[0] + " | " + beer[1] + " | " + beer[2] + " | " + beer[3] + " | " + beer[4] + " | " + beer[5] + " | " + beer[7] + " | " + beer[6] + " |")
