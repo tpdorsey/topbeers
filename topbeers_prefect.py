@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
-from prefect import task, Flow, Parameter
+from prefect import task, Flow
+from prefect.executors import LocalDaskExecutor
 
 headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.108 Safari/537.36'
@@ -53,16 +54,15 @@ def get_beers(table_rows):
     return top_beers
 
 @task
-def get_brewer(top_beers):
-    for beer in top_beers:
-        burl = base_url + beer['brewer_page']
-        brewer_page = get_page(burl)
-        bpage = BeautifulSoup(brewer_page.text, 'html.parser')
+def get_brewer(beer):
+    burl = base_url + beer['brewer_page']
+    brewer_page = get_page(burl)
+    bpage = BeautifulSoup(brewer_page.text, 'html.parser')
 
-        beer['brewer_state'] = bpage.find_all(id="info_box")[0].find_all('a')[1].text
-        beer['brewer_avg_rating'] = bpage.findAll(id="stats_box")[0].findAll('dd')[0].text
+    beer['brewer_state'] = bpage.find_all(id="info_box")[0].find_all('a')[1].text
+    beer['brewer_avg_rating'] = bpage.findAll(id="stats_box")[0].findAll('dd')[0].text
 
-    return top_beers
+    return beer
 
 @task
 def print_chart(top_beers):
@@ -74,7 +74,9 @@ def print_chart(top_beers):
 with Flow("top-beers") as flow:
     rows = get_table_rows(top_url)
     top_beers = get_beers(rows)
-    beers_n_brewers = get_brewer(top_beers)
+    # beers_n_brewers = get_brewer(top_beers)
+    beers_n_brewers = get_brewer.map(top_beers)
     print_chart(beers_n_brewers)
 
+flow.executor = LocalDaskExecutor()
 flow.run()
