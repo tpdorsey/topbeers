@@ -6,68 +6,48 @@ headers = {
 }
 
 base_url = 'http://beeradvocate.com'
-
-url = base_url + '/lists/top/'
-
-session = requests.Session()
-response = session.get(url, headers=headers)
-
-soup = BeautifulSoup(response.text, "html.parser")
-
-rows = soup.findAll('tr')
-beer_rows = rows[2:]
+top_url = base_url + '/lists/top/'
 
 top_beers = []
 
-# To Do: persist this data to a file to reduce web page calls on subsequent runs
-brewer_state = {}
-brewer_avg = {}
+session = requests.Session()
+response = session.get(top_url, headers=headers)
+page = BeautifulSoup(response.text, "html.parser")
 
-for row in beer_rows:
+table_rows = page.findAll('tr')
+rows = table_rows[1:]
 
-  a_tags = row.findAll('td')[1].findAll('a')
+for row in rows:
 
-  rank = row.findAll('td')[0].text
-  beer_name = a_tags[0].text
-  beer_page = a_tags[0].get('href')
-  brewer_name = a_tags[1].text
-  brewer_page = a_tags[1].get('href')
-  beer_style = a_tags[2].text
+  cells = row.findAll('td')
+  a_tags = cells[1].findAll('a')
 
-  remove_string = rank + beer_name + brewer_name + beer_style
+  beer = {}
+  beer['rank'] = cells[0].text
+  beer['name'] = a_tags[0].text
+  beer['page'] = a_tags[0].get('href')
+  beer['brewer_name'] = a_tags[1].text
+  beer['brewer_page'] = a_tags[1].get('href')
+  beer['brewer_id'] = beer['brewer_page'].split("/")[-2]
+  beer['style'] = a_tags[2].text
+  beer['ratings'] = cells[2].text
+  beer['avg_rating'] = cells[3].text
 
-  raw_abv_wr = row.text.replace(remove_string,"")
-
-  if " / " in raw_abv_wr:
-    abv_wr = raw_abv_wr.replace(" / ","").split("% ABV")
+  abv = cells[1].text.rsplit(" | ")
+  if len(abv) > 1:
+    beer['abv'] = abv[-1]
   else:
-    abv_wr = ["", raw_abv_wr]
+    beer['abv'] = ""
+  
+  burl = base_url + beer['brewer_page']
+  brewer_page = session.get(burl, headers=headers)
+  bpage = BeautifulSoup(brewer_page.text, 'html.parser')
+  beer['brewer_state'] = bpage.findAll(id="info_box")[0].findAll('a')[1].text
+  beer['brewer_avg_rating'] = bpage.findAll(id="stats_box")[0].findAll('dd')[0].text
 
-  if brewer_name in brewer_state:
-    state = brewer_state[brewer_name]
-    avg = brewer_avg[brewer_name]
+  top_beers.append(beer)
 
-  else:
-    burl = base_url + brewer_page
-    brewer_page = session.get(burl, headers=headers)
-    bsoup = BeautifulSoup(brewer_page.text, 'html.parser')
-
-    state = bsoup.findAll(property="og:title")[0]["content"].split(" | ")[1].split(", ")[1]
-
-    # avg = bsoup.findAll(class_="ba-score")[0].text
-    avg_score = bsoup.findAll(class_="ba-score")
-    if len(avg_score) > 0:
-      avg = avg_score[0].text
-    else:
-      avg = ""
-
-    brewer_state[brewer_name] = state
-    brewer_avg[brewer_name] = avg
-
-
-  top_beers.append([rank, beer_name, brewer_name, state, beer_style, abv_wr[0], abv_wr[1], avg])
-
-print( "| Rank | Beer | Brewer | State | Style | ABV | WR | Brewer AVG |")
-print( "| --- | --- | --- | --- | --- | --- | --- | --- |")
+print( "| Rank | Beer | Brewer | State | Style | ABV | AVG Rating | Ratings | Brewer AVG |")
+print( "| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
 for beer in top_beers:
-  print( "| " + beer[0] + " | " + beer[1] + " | " + beer[2] + " | " + beer[3] + " | " + beer[4] + " | " + beer[5] + " | " + beer[7] + " | " + beer[6] + " |")
+  print( "| " + beer['rank'] + " | " + beer['name'] + " | " + beer['brewer_name'] + " | " + beer['brewer_state'] + " | " + beer['style'] + " | " + beer['abv'] + " | " + beer['avg_rating'] + " | " + beer['ratings'] + " | " + beer['brewer_avg_rating'] + " |")
